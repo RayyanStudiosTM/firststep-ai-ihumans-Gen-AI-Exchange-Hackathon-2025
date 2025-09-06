@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Brain, Compass, Rocket, Settings, LogOut, ChevronRight, PersonStandingIcon, ScanFaceIcon } from 'lucide-react';
+import { Home, Brain, Compass, Rocket, Settings, LogOut, ChevronRight, UserCheck, PersonStandingIcon, ScanFaceIcon } from 'lucide-react';
 
 const DashboardSidebar = ({ isOpen, setIsOpen }) => {
   const pathname = usePathname();
@@ -29,6 +29,12 @@ const DashboardSidebar = ({ isOpen, setIsOpen }) => {
       icon: ScanFaceIcon, 
       label: 'Talk To AI', 
       path: '/dashboard/avatar',
+      badge: null
+    },
+    {
+      icon: UserCheck, 
+      label: 'Connect with Mentors', 
+      path: '/dashboard/mentors',
       badge: null
     }
   ];
