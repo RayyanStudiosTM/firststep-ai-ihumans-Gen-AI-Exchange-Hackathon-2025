@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   MapPin,
   Star,
@@ -24,6 +24,8 @@ import {
   Loader2,
   XCircle,
   AlertCircle,
+  Download,
+  FileText
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import {
@@ -33,7 +35,7 @@ import {
 import { getUserAssessment } from "@/utils/firebase/assessment/read";
 import toast from "react-hot-toast";
 
-// Reusable Components (keeping all as they are)
+// Reusable Components
 const MatchScoreBadge = ({ score }) => (
   <div className="flex items-center gap-2 bg-violet-50 text-violet-700 px-4 py-2 rounded-full">
     <Star className="w-5 h-5 fill-violet-500 text-violet-500" />
@@ -191,6 +193,574 @@ const LoadingState = () => (
   </div>
 );
 
+// PDF-Optimized Content Component
+const PDFContent = ({ career, additionalInsights, user }) => (
+  <div 
+    className="pdf-content" 
+    style={{ 
+      width: '210mm', 
+      margin: '0 auto', 
+      backgroundColor: 'white', 
+      padding: '20px', 
+      fontSize: '12px', 
+      lineHeight: '1.4', 
+      color: '#333',
+      fontFamily: 'Arial, sans-serif'
+    }}
+  >
+    {/* PDF Header */}
+    <div style={{ 
+      textAlign: 'center', 
+      marginBottom: '30px', 
+      borderBottom: '2px solid #8b5cf6', 
+      paddingBottom: '20px' 
+    }}>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        gap: '15px', 
+        marginBottom: '15px' 
+      }}>
+        <div style={{ 
+          width: '50px', 
+          height: '50px', 
+          backgroundColor: '#f3f4f6', 
+          borderRadius: '8px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          fontSize: '24px'
+        }}>
+          📄
+        </div>
+        <div>
+          <h1 style={{ 
+            fontSize: '24px', 
+            fontWeight: 'bold', 
+            margin: '0', 
+            color: '#1f2937' 
+          }}>
+            Career Roadmap Report
+          </h1>
+          <p style={{ 
+            color: '#6b7280', 
+            margin: '5px 0 0 0' 
+          }}>
+            Generated on {new Date().toLocaleDateString()}
+          </p>
+        </div>
+      </div>
+      <div style={{ 
+        backgroundColor: '#f8fafc', 
+        padding: '15px', 
+        borderRadius: '8px' 
+      }}>
+        <h2 style={{ 
+          fontSize: '18px', 
+          fontWeight: '600', 
+          margin: '0 0 8px 0', 
+          color: '#1f2937' 
+        }}>
+          {user?.displayName}'s Career Path
+        </h2>
+        <p style={{ 
+          color: '#6b7280', 
+          margin: '0' 
+        }}>
+          Personalized roadmap for {career?.career || "career development"}
+        </p>
+      </div>
+    </div>
+
+    {/* Career Overview */}
+    <div style={{ marginBottom: '25px' }}>
+      <h2 style={{ 
+        fontSize: '18px', 
+        fontWeight: 'bold', 
+        color: '#1f2937', 
+        marginBottom: '15px', 
+        borderBottom: '1px solid #e5e7eb', 
+        paddingBottom: '8px' 
+      }}>
+        Career Overview
+      </h2>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(3, 1fr)', 
+        gap: '15px' 
+      }}>
+        {career?.industryOutlook && (
+          <>
+            <div style={{ 
+              border: '1px solid #e5e7eb', 
+              padding: '12px', 
+              borderRadius: '8px' 
+            }}>
+              <p style={{ 
+                fontSize: '11px', 
+                color: '#6b7280', 
+                margin: '0 0 5px 0' 
+              }}>
+                Industry Growth
+              </p>
+              <p style={{ 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                color: '#1f2937', 
+                margin: '0' 
+              }}>
+                {career.industryOutlook.growthRate || "N/A"}
+              </p>
+            </div>
+            <div style={{ 
+              border: '1px solid #e5e7eb', 
+              padding: '12px', 
+              borderRadius: '8px' 
+            }}>
+              <p style={{ 
+                fontSize: '11px', 
+                color: '#6b7280', 
+                margin: '0 0 5px 0' 
+              }}>
+                Market Demand
+              </p>
+              <p style={{ 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                color: '#1f2937', 
+                margin: '0' 
+              }}>
+                {career.industryOutlook.marketDemand || "N/A"}
+              </p>
+            </div>
+            <div style={{ 
+              border: '1px solid #e5e7eb', 
+              padding: '12px', 
+              borderRadius: '8px' 
+            }}>
+              <p style={{ 
+                fontSize: '11px', 
+                color: '#6b7280', 
+                margin: '0 0 5px 0' 
+              }}>
+                Top Package
+              </p>
+              <p style={{ 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                color: '#1f2937', 
+                margin: '0' 
+              }}>
+                {career.industryOutlook.topRecruiters?.[0]?.averagePackage || "N/A"}
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+
+    {/* Career Progression */}
+    {additionalInsights?.careerProgression && (
+      <div style={{ marginBottom: '25px' }}>
+        <h2 style={{ 
+          fontSize: '18px', 
+          fontWeight: 'bold', 
+          color: '#1f2937', 
+          marginBottom: '15px', 
+          borderBottom: '1px solid #e5e7eb', 
+          paddingBottom: '8px' 
+        }}>
+          Career Progression Timeline
+        </h2>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '15px' 
+        }}>
+          {Object.entries(additionalInsights.careerProgression).map(([year, data], index) => (
+            <div key={year} style={{ 
+              display: 'flex', 
+              alignItems: 'flex-start', 
+              gap: '12px', 
+              padding: '12px', 
+              backgroundColor: '#f9fafb', 
+              borderRadius: '8px' 
+            }}>
+              <div style={{ 
+                width: '40px', 
+                height: '40px', 
+                backgroundColor: '#8b5cf6', 
+                borderRadius: '6px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: 'white', 
+                fontSize: '18px', 
+                flexShrink: 0 
+              }}>
+                🏆
+              </div>
+              <div>
+                <p style={{ 
+                  fontSize: '11px', 
+                  color: '#8b5cf6', 
+                  fontWeight: '600', 
+                  margin: '0 0 4px 0' 
+                }}>
+                  Year {year.replace("year", "")}
+                </p>
+                <h3 style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '600', 
+                  color: '#1f2937', 
+                  margin: '0 0 4px 0' 
+                }}>
+                  {data.role}
+                </h3>
+                <p style={{ 
+                  fontSize: '12px', 
+                  color: '#6b7280', 
+                  margin: '0 0 4px 0' 
+                }}>
+                  {data.focus}
+                </p>
+                <p style={{ 
+                  fontSize: '12px', 
+                  fontWeight: '600', 
+                  color: '#8b5cf6', 
+                  margin: '0' 
+                }}>
+                  {data.expectedPackage}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {/* Required Skills */}
+    {career?.subFields && (
+      <div style={{ marginBottom: '25px' }}>
+        <h2 style={{ 
+          fontSize: '18px', 
+          fontWeight: 'bold', 
+          color: '#1f2937', 
+          marginBottom: '15px', 
+          borderBottom: '1px solid #e5e7eb', 
+          paddingBottom: '8px' 
+        }}>
+          Required Skills
+        </h2>
+        {career.subFields.map((subField, idx) => (
+          <div key={idx} style={{ marginBottom: '20px' }}>
+            <h3 style={{ 
+              fontSize: '14px', 
+              fontWeight: '600', 
+              color: '#8b5cf6', 
+              marginBottom: '8px' 
+            }}>
+              🎯 {subField.name}
+            </h3>
+            <p style={{ 
+              fontSize: '12px', 
+              color: '#6b7280', 
+              marginBottom: '12px' 
+            }}>
+              {subField.description}
+            </p>
+            
+            {/* Technical Skills */}
+            {subField.requiredSkills?.technical?.length > 0 && (
+              <div style={{ marginBottom: '12px' }}>
+                <h4 style={{ 
+                  fontSize: '12px', 
+                  fontWeight: '600', 
+                  color: '#1f2937', 
+                  marginBottom: '8px' 
+                }}>
+                  Technical Skills:
+                </h4>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(2, 1fr)', 
+                  gap: '8px' 
+                }}>
+                  {subField.requiredSkills.technical.map((skill, skillIdx) => (
+                    <div key={skillIdx} style={{ 
+                      border: '1px solid #e5e7eb', 
+                      padding: '8px', 
+                      borderRadius: '6px', 
+                      backgroundColor: 'white' 
+                    }}>
+                      <h5 style={{ 
+                        fontSize: '12px', 
+                        fontWeight: '600', 
+                        color: '#1f2937', 
+                        margin: '0 0 4px 0' 
+                      }}>
+                        {skill.skill}
+                      </h5>
+                      <div style={{ 
+                        display: 'flex', 
+                        flexWrap: 'wrap', 
+                        gap: '4px', 
+                        marginBottom: '4px' 
+                      }}>
+                        {skill.technologies?.map((tech, techIdx) => (
+                          <span key={techIdx} style={{ 
+                            fontSize: '10px', 
+                            backgroundColor: '#f3f4f6', 
+                            color: '#8b5cf6', 
+                            padding: '2px 6px', 
+                            borderRadius: '12px' 
+                          }}>
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                      <p style={{ 
+                        fontSize: '10px', 
+                        color: '#6b7280', 
+                        margin: '0' 
+                      }}>
+                        Proficiency: <span style={{ 
+                          color: '#8b5cf6', 
+                          fontWeight: '600' 
+                        }}>
+                          {skill.proficiencyLevel}
+                        </span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Soft Skills */}
+            {subField.requiredSkills?.soft?.length > 0 && (
+              <div style={{ marginBottom: '12px' }}>
+                <h4 style={{ 
+                  fontSize: '12px', 
+                  fontWeight: '600', 
+                  color: '#1f2937', 
+                  marginBottom: '6px' 
+                }}>
+                  Soft Skills:
+                </h4>
+                <div style={{ 
+                  display: 'flex', 
+                  flexWrap: 'wrap', 
+                  gap: '6px' 
+                }}>
+                  {subField.requiredSkills.soft.map((skill, skillIdx) => (
+                    <span key={skillIdx} style={{ 
+                      fontSize: '10px', 
+                      backgroundColor: '#f3f4f6', 
+                      color: '#8b5cf6', 
+                      padding: '4px 8px', 
+                      borderRadius: '12px', 
+                      border: '1px solid #e5e7eb' 
+                    }}>
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* Recommended Courses */}
+    {career?.subFields && (
+      <div style={{ marginBottom: '25px' }}>
+        <h2 style={{ 
+          fontSize: '18px', 
+          fontWeight: 'bold', 
+          color: '#1f2937', 
+          marginBottom: '15px', 
+          borderBottom: '1px solid #e5e7eb', 
+          paddingBottom: '8px' 
+        }}>
+          Recommended Learning Resources
+        </h2>
+        {career.subFields.map((subField, subFieldIdx) => (
+          <div key={subFieldIdx} style={{ marginBottom: '15px' }}>
+            <h3 style={{ 
+              fontSize: '14px', 
+              fontWeight: '600', 
+              color: '#8b5cf6', 
+              marginBottom: '10px' 
+            }}>
+              📚 {subField.name}
+            </h3>
+            {subField.preparationResources?.courses?.length > 0 && (
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(2, 1fr)', 
+                gap: '10px' 
+              }}>
+                {subField.preparationResources.courses.map((course, courseIdx) => (
+                  <div key={courseIdx} style={{ 
+                    border: '1px solid #e5e7eb', 
+                    padding: '10px', 
+                    borderRadius: '6px', 
+                    backgroundColor: 'white' 
+                  }}>
+                    <h4 style={{ 
+                      fontSize: '12px', 
+                      fontWeight: '600', 
+                      color: '#1f2937', 
+                      margin: '0 0 4px 0' 
+                    }}>
+                      {course.name}
+                    </h4>
+                    <p style={{ 
+                      fontSize: '10px', 
+                      color: '#6b7280', 
+                      margin: '0 0 6px 0' 
+                    }}>
+                      {course.platform}
+                    </p>
+                    <div style={{ 
+                      fontSize: '10px', 
+                      color: '#6b7280' 
+                    }}>
+                      <p style={{ margin: '0 0 2px 0' }}>⏰ {course.duration}</p>
+                      <p style={{ margin: '0 0 2px 0' }}>💰 {course.cost}</p>
+                      {course.certification && <p style={{ margin: '0', color: '#10b981' }}>🏆 Certification Available</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* Work-Life Balance */}
+    {additionalInsights?.workLifeBalance && (
+      <div style={{ marginBottom: '25px' }}>
+        <h2 style={{ 
+          fontSize: '18px', 
+          fontWeight: 'bold', 
+          color: '#1f2937', 
+          marginBottom: '15px', 
+          borderBottom: '1px solid #e5e7eb', 
+          paddingBottom: '8px' 
+        }}>
+          Work-Life Balance
+        </h2>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(2, 1fr)', 
+          gap: '12px', 
+          marginBottom: '12px' 
+        }}>
+          <div style={{ 
+            border: '1px solid #e5e7eb', 
+            padding: '12px', 
+            borderRadius: '8px' 
+          }}>
+            <p style={{ 
+              fontSize: '11px', 
+              color: '#6b7280', 
+              margin: '0 0 4px 0' 
+            }}>
+              Working Hours
+            </p>
+            <p style={{ 
+              fontSize: '14px', 
+              fontWeight: '600', 
+              color: '#1f2937', 
+              margin: '0' 
+            }}>
+              {additionalInsights.workLifeBalance.averageWorkHours}
+            </p>
+          </div>
+          <div style={{ 
+            border: '1px solid #e5e7eb', 
+            padding: '12px', 
+            borderRadius: '8px' 
+          }}>
+            <p style={{ 
+              fontSize: '11px', 
+              color: '#6b7280', 
+              margin: '0 0 4px 0' 
+            }}>
+              Remote Work
+            </p>
+            <p style={{ 
+              fontSize: '14px', 
+              fontWeight: '600', 
+              color: '#1f2937', 
+              margin: '0' 
+            }}>
+              {additionalInsights.workLifeBalance.remoteOpportunities}
+            </p>
+          </div>
+        </div>
+        {additionalInsights.workLifeBalance.tips?.length > 0 && (
+          <div style={{ 
+            backgroundColor: '#f8fafc', 
+            padding: '12px', 
+            borderRadius: '8px' 
+          }}>
+            <h4 style={{ 
+              fontSize: '12px', 
+              fontWeight: '600', 
+              color: '#1f2937', 
+              marginBottom: '8px' 
+            }}>
+              Pro Tips:
+            </h4>
+            <ul style={{ 
+              margin: '0', 
+              paddingLeft: '16px' 
+            }}>
+              {additionalInsights.workLifeBalance.tips.map((tip, idx) => (
+                <li key={idx} style={{ 
+                  fontSize: '11px', 
+                  color: '#6b7280', 
+                  marginBottom: '4px' 
+                }}>
+                  {tip}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* PDF Footer */}
+    <div style={{ 
+      textAlign: 'center', 
+      marginTop: '30px', 
+      paddingTop: '20px', 
+      borderTop: '2px solid #8b5cf6', 
+      color: '#6b7280' 
+    }}>
+      <p style={{ 
+        fontSize: '11px', 
+        margin: '0 0 4px 0' 
+      }}>
+        Generated by FirstStep AI - Career Guidance Platform
+      </p>
+      <p style={{ 
+        fontSize: '10px', 
+        margin: '0' 
+      }}>
+        For more personalized guidance, visit our platform
+      </p>
+    </div>
+  </div>
+);
+
 // Main Component
 const Roadmap = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -198,6 +768,7 @@ const Roadmap = () => {
   const [roadmapData, setRoadmapData] = useState(null);
 
   const user = useSelector((state) => state.user);
+  const roadmapRef = useRef();
 
   useEffect(() => {
     (async () => {
@@ -206,7 +777,6 @@ const Roadmap = () => {
       setIsLoading(true);
       try {
         const res = await getRoadmap({ uid: user.uid });
-        // Adjust for the nested career_recommendations structure
         setRoadmapData(res?.career_recommendations || res);
       } catch (error) {
         console.log('error', error);
@@ -217,6 +787,93 @@ const Roadmap = () => {
       }
     })();
   }, [user]);
+
+  // Enhanced PDF Export Function with Clean Layout
+  const exportRoadmapPDF = async () => {
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const jsPDF = (await import('jspdf')).default;
+
+      // Create a temporary container with clean PDF content
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.top = '0';
+      document.body.appendChild(tempDiv);
+
+      // Render PDF content
+      const { createRoot } = await import('react-dom/client');
+      const root = createRoot(tempDiv);
+      
+      root.render(
+        <PDFContent 
+          career={roadmapData.primaryCareerPaths[0]} 
+          additionalInsights={roadmapData.additionalInsights} 
+          user={user} 
+        />
+      );
+
+      // Wait for render
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const loadingToast = toast.loading('Generating PDF...');
+
+      const canvas = await html2canvas(tempDiv.firstChild, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        width: 794, // A4 width in pixels (210mm)
+        height: tempDiv.firstChild.scrollHeight
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      // Handle multiple pages
+      if (pdfHeight > 297) { // A4 height in mm
+        const pageHeight = 297;
+        let heightCovered = 0;
+        let pageNumber = 1;
+        
+        while (heightCovered < pdfHeight) {
+          if (pageNumber > 1) {
+            pdf.addPage();
+          }
+          
+          pdf.addImage(
+            imgData, 
+            'PNG', 
+            0, 
+            -heightCovered * (297 / pdfHeight), 
+            pdfWidth, 
+            297
+          );
+          
+          heightCovered += pageHeight;
+          pageNumber++;
+        }
+      } else {
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      }
+      
+      const fileName = `${user?.displayName || 'User'}_Career_Roadmap_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+      
+      // Clean up
+      root.unmount();
+      document.body.removeChild(tempDiv);
+      
+      toast.dismiss(loadingToast);
+      toast.success('Career roadmap exported successfully!');
+      
+    } catch (error) {
+      console.error('PDF Export Error:', error);
+      toast.error('Failed to export PDF. Please install: npm install jspdf html2canvas react-dom');
+    }
+  };
 
   if (isLoading) {
     return <LoadingState />;
@@ -246,24 +903,32 @@ const Roadmap = () => {
     );
   }
 
-  // Access the first career path correctly
   const career = roadmapData.primaryCareerPaths[0];
   const { additionalInsights } = roadmapData;
 
   return (
     <div className="space-y-8">
-      {/* Header */}
+      {/* Header with Export Button */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Career Roadmap 📍
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">Career Roadmap 📍</h1>
           <p className="text-gray-600">
-            Your personalized path to success in{" "}
-            {career?.career || "your field"}
+            Your personalized path to success in {career?.career || "your field"}
           </p>
         </div>
-        {career?.matchScore && <MatchScoreBadge score={career.matchScore} />}
+        
+        <div className="flex items-center gap-4">
+          {career?.matchScore && <MatchScoreBadge score={career.matchScore} />}
+          
+          {/* Export PDF Button */}
+          <button
+            onClick={exportRoadmapPDF}
+            className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
+          >
+            <Download className="w-5 h-5" />
+            Export Report
+          </button>
+        </div>
       </div>
 
       {/* Quick Stats */}
